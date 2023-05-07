@@ -2,7 +2,16 @@ package u06lab.solutions
 
 import java.util.OptionalInt
 
-// Optional!
+/**
+ * Board:
+ * y
+ *
+ * 3
+ * 2
+ * 1
+ * 0
+ * 0 1 2 3 <-- x
+ */
 object ConnectThree extends App:
   val bound = 3
   enum Player:
@@ -12,28 +21,51 @@ object ConnectThree extends App:
       case _ => X
 
   case class Disk(x: Int, y: Int, player: Player)
-  /**
-   * Board:
-   * y
-   *
-   * 3
-   * 2
-   * 1
-   * 0
-   *   0 1 2 3 <-- x
-   */
-  type Board = Seq[Disk]
+
+  extension(disks: Seq[Disk])
+    private def countNears: Int =
+      val sortedDisks = disks.sortBy(d => (d.x, d.y))
+      sortedDisks.zip(sortedDisks.drop(1)).count((d1, d2) => (d1.x - d2.x).abs <= 1 && (d1.y - d2.y).abs <= 1) + 1
+
   type Game = Seq[Board]
+  type Board = Seq[Disk]
+
+  extension(board: Board)
+    private def inWith(criteria: Disk => Boolean): Seq[Disk] = board.filter(criteria(_))
+    private def inLineWith(disk: Disk): Seq[Disk] = inWith(d => d.y == disk.y)
+    private def inColumnWith(disk: Disk): Seq[Disk] = inWith(d => d.x == disk.x)
+    private def inDiagonalWith(disk: Disk): Seq[Disk] = inWith(d => (d.x - disk.x).abs == (d.y - disk.y).abs)
+    private def inMainDiagonalWith(disk: Disk): Seq[Disk] = inDiagonalWith(disk).filter(d => d.x - disk.x >= 0)
+    private def inAntiDiagonalWith(disk: Disk): Seq[Disk] = inDiagonalWith(disk).filter(d => d.x - disk.x <= 0)
+    def hasTris: Boolean = board.exists(d =>
+      Seq(inColumnWith(d), inLineWith(d), inMainDiagonalWith(d), inAntiDiagonalWith(d))
+        .map(_.filter(_.player == d.player))
+        .exists(_.countNears >= 3)
+    )
 
   import Player.*
 
-  def find(board: Board, x: Int, y: Int): Option[Player] = ???
+  def find(board: Board, x: Int, y: Int): Option[Player] = board find (d => d.x == x && d.y == y) map (_.player)
 
-  def firstAvailableRow(board: Board, x: Int): Option[Int] = ???
+  def firstAvailableRow(board: Board, x: Int): Option[Int] = board.filter(_.x == x).maxByOption(_.y) match
+    case None => Some(0)
+    case Some(Disk(_, y, _)) if y == bound => None
+    case s => s.map(_.y + 1)
 
-  def placeAnyDisk(board: Board, player: Player): Seq[Board] = ???
+  def placeAnyDisk(board: Board, player: Player): Seq[Board] =
+    for
+      x <- bound to 0 by -1
+      y = firstAvailableRow(board, x)
+      if y.isDefined
+    yield board :+ Disk(x, y.get, player)
 
-  def computeAnyGame(player: Player, moves: Int): LazyList[Game] = ???
+  def computeAnyGame(player: Player, numOfMoves: Int): LazyList[Game] = numOfMoves match
+    case 1 => LazyList.from(placeAnyDisk(List(), player)) map (Seq(_))
+    case _ =>
+      for
+        game <- computeAnyGame(player.other, numOfMoves - 1)
+        newBoard <- if game.last.hasTris then Seq(game.last) else placeAnyDisk(game.last, player)
+      yield if game.last.hasTris then game else game :+ newBoard
 
   def printBoards(game: Seq[Board]): Unit =
     for
@@ -46,45 +78,8 @@ object ConnectThree extends App:
         print(" ")
         if board == game.head then println()
 
-  // Exercise 1: implement find such that..
-  println("EX 1: ")
-  println(find(List(Disk(0, 0, X)), 0, 0)) // Some(X)
-  println(find(List(Disk(0, 0, X), Disk(0, 1, O), Disk(0, 2, X)), 0, 1)) // Some(O)
-  println(find(List(Disk(0, 0, X), Disk(0, 1, O), Disk(0, 2, X)), 1, 1)) // None
-
-  // Exercise 2: implement firstAvailableRow such that..
-  println("EX 2: ")
-  println(firstAvailableRow(List(), 0)) // Some(0)
-  println(firstAvailableRow(List(Disk(0, 0, X)), 0)) // Some(1)
-  println(firstAvailableRow(List(Disk(0, 0, X), Disk(0, 1, X)), 0)) // Some(2)
-  println(firstAvailableRow(List(Disk(0, 0, X), Disk(0, 1, X), Disk(0, 2, X)), 0)) // Some(3)
-  println(firstAvailableRow(List(Disk(0, 0, X), Disk(0, 1, X), Disk(0, 2, X), Disk(0, 3, X)), 0)) // None
-  // Exercise 2: implement placeAnyDisk such that..
-  printBoards(placeAnyDisk(List(), X))
-  // .... .... .... ....
-  // .... .... .... ....
-  // .... .... .... ....
-  // ...X ..X. .X.. X...
-  printBoards(placeAnyDisk(List(Disk(0, 0, O)), X))
-  // .... .... .... ....
-  // .... .... .... ....
-  // ...X .... .... ....
-  // ...O ..XO .X.O X..O
-  println("EX 3: ")
-// Exercise 3 (ADVANCED!): implement computeAnyGame such that..
-  computeAnyGame(O, 4).foreach { g =>
-    printBoards(g)
+  computeAnyGame(O, 16).zipWithIndex.foreach { g =>
+    println(f"Solution ${g._2}")
+    printBoards(g._1)
     println()
   }
-//  .... .... .... .... ...O
-//  .... .... .... ...X ...X
-//  .... .... ...O ...O ...O
-//  .... ...X ...X ...X ...X
-//
-//
-// .... .... .... .... O...
-// .... .... .... X... X...
-// .... .... O... O... O...
-// .... X... X... X... X...
-
-// Exercise 4 (VERY ADVANCED!) -- modify the above one so as to stop each game when someone won!!

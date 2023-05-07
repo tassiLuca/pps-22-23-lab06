@@ -5,9 +5,11 @@ object Solitaire extends App:
   type Solution = Iterable[Position]
 
   extension (p: Position)
-    def distanceTo(q: Position): Int = (p._1 - q._1).abs + (p._2 - q._2).abs
     def isInLineWith(q: Position): Boolean = (p._1 == q._1) || (p._2 == q._2)
     def isInDiagonalWith(q: Position): Boolean = (p._1 - q._1).abs == (p._2 - q._2).abs
+    def distanceTo(q: Position): Int = (p._1 - q._1).abs + (p._2 - q._2).abs
+    def canMoveTo(q: Position): Boolean =
+      ((p isInLineWith q) && (p distanceTo q) == 3) || ((p isInDiagonalWith q) && (p distanceTo q) == 4)
 
   def placePlayer(width: Int, height: Int)(n: Int = width * height): Iterable[Solution] = n match
     case 1 => LazyList(List((height / 2, width / 2)))
@@ -21,12 +23,7 @@ object Solitaire extends App:
       yield
         marked.toSeq :+ m
 
-  private def isFeasible(p1: Position, ps: Solution): Boolean = !ps.exists(_ == p1) && canMoveTowards(p1, ps.last)
-
-  private def canMoveTowards(p1: Position, p2: Position): Boolean =
-    ((p1 isInLineWith p2) && (p1 distanceTo p2) == 3) || ((p1 isInDiagonalWith p2) && (p1 distanceTo p2) == 2)
-//    ((p1._2 == p2._2 || p1._1 == p2._1) && (p1._1 - p2._1).abs + (p1._2 - p2._2).abs == 3) ||
-//      ((p2._1 - p1._1).abs == (p2._2 - p1._2).abs && (p1._1 - p2._1).abs == 2)
+  private def isFeasible(p1: Position, ps: Solution): Boolean = !ps.exists(_ == p1) && (p1 canMoveTo ps.last)
 
   def render(solution: Solution, width: Int, height: Int): String =
     val rows =
