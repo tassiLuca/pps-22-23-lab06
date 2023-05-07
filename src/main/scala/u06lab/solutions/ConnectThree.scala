@@ -31,48 +31,55 @@ object ConnectThree extends App:
 
   extension(board: Board)
     private def inWith(criteria: Disk => Boolean): Seq[Disk] = board.filter(criteria(_))
+
     private def inLineWith(disk: Disk): Seq[Disk] = inWith(d => d.y == disk.y)
+
     private def inColumnWith(disk: Disk): Seq[Disk] = inWith(d => d.x == disk.x)
+
     private def inDiagonalWith(disk: Disk): Seq[Disk] = inWith(d => (d.x - disk.x).abs == (d.y - disk.y).abs)
+
     private def inMainDiagonalWith(disk: Disk): Seq[Disk] = inDiagonalWith(disk).filter(d => d.x - disk.x >= 0)
+
     private def inAntiDiagonalWith(disk: Disk): Seq[Disk] = inDiagonalWith(disk).filter(d => d.x - disk.x <= 0)
+
     def hasTris: Boolean = board.exists(d =>
       Seq(inColumnWith(d), inLineWith(d), inMainDiagonalWith(d), inAntiDiagonalWith(d))
         .map(_.filter(_.player == d.player))
         .exists(_.countNears >= 3)
     )
 
+    def find(x: Int, y: Int): Option[Player] = board find (d => d.x == x && d.y == y) map (_.player)
+
+    def firstAvailableRow(x: Int): Option[Int] = board.filter(_.x == x).maxByOption(_.y) match
+      case None => Some(0)
+      case Some(Disk(_, y, _)) if y == bound => None
+      case s => s.map(_.y + 1)
+
+    def placeAnyDisk(player: Player): Seq[Board] =
+      for
+        x <- bound to 0 by -1
+        y = board.firstAvailableRow(x)
+        if y.isDefined
+      yield board :+ Disk(x, y.get, player)
+
   import Player.*
 
-  def find(board: Board, x: Int, y: Int): Option[Player] = board find (d => d.x == x && d.y == y) map (_.player)
-
-  def firstAvailableRow(board: Board, x: Int): Option[Int] = board.filter(_.x == x).maxByOption(_.y) match
-    case None => Some(0)
-    case Some(Disk(_, y, _)) if y == bound => None
-    case s => s.map(_.y + 1)
-
-  def placeAnyDisk(board: Board, player: Player): Seq[Board] =
-    for
-      x <- bound to 0 by -1
-      y = firstAvailableRow(board, x)
-      if y.isDefined
-    yield board :+ Disk(x, y.get, player)
 
   def computeAnyGame(player: Player, numOfMoves: Int): LazyList[Game] = numOfMoves match
-    case 1 => LazyList.from(placeAnyDisk(List(), player)) map (Seq(_))
+    case 1 => LazyList.from(Seq().placeAnyDisk(player)) map (Seq(_))
     case _ =>
       for
         game <- computeAnyGame(player.other, numOfMoves - 1)
-        newBoard <- if game.last.hasTris then Seq(game.last) else placeAnyDisk(game.last, player)
+        newBoard <- if game.last.hasTris then Seq(game.last) else game.last.placeAnyDisk(player)
       yield if game.last.hasTris then game else game :+ newBoard
 
-  def printBoards(game: Seq[Board]): Unit =
+  def printBoards(game: Game): Unit =
     for
       y <- bound to 0 by -1
       board <- game.reverse
       x <- 0 to bound
     do
-      print(find(board, x, y).map(_.toString).getOrElse("."))
+      print(board.find(x, y).map(_.toString).getOrElse("."))
       if x == bound then
         print(" ")
         if board == game.head then println()

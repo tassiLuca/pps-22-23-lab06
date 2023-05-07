@@ -11,17 +11,17 @@ class ConnectThreeTest :
 
   @Test
   def testFind(): Unit =
-    assertEquals(Some(X), find(List(Disk(0, 0, X)), 0, 0))
-    assertEquals(Some(O), find(List(Disk(0, 0, X), Disk(0, 1, O), Disk(0, 2, X)), 0, 1))
-    assertEquals(None, find(List(Disk(0, 0, X), Disk(0, 1, O), Disk(0, 2, X)), 1, 1))
+    assertEquals(Some(X), List(Disk(0, 0, X)).find(0, 0))
+    assertEquals(Some(O), List(Disk(0, 0, X), Disk(0, 1, O), Disk(0, 2, X)).find(0, 1))
+    assertEquals(None, List(Disk(0, 0, X), Disk(0, 1, O), Disk(0, 2, X)).find(1, 1))
 
   @Test
   def testFirstAvailableRow(): Unit =
-    assertEquals(Some(0), firstAvailableRow(List(), 0))
-    assertEquals(Some(1), firstAvailableRow(List(Disk(0, 0, X)), 0))
-    assertEquals(Some(2), firstAvailableRow(List(Disk(0, 0, X), Disk(0, 1, X)), 0))
-    assertEquals(Some(3), firstAvailableRow(List(Disk(0, 0, X), Disk(0, 1, X), Disk(0, 2, X)), 0))
-    assertEquals(None, firstAvailableRow(List(Disk(0, 0, X), Disk(0, 1, X), Disk(0, 2, X), Disk(0, 3, X)), 0))
+    assertEquals(Some(0), List().firstAvailableRow(0))
+    assertEquals(Some(1), List(Disk(0, 0, X)).firstAvailableRow(0))
+    assertEquals(Some(2), List(Disk(0, 0, X), Disk(0, 1, X)).firstAvailableRow(0))
+    assertEquals(Some(3), List(Disk(0, 0, X), Disk(0, 1, X), Disk(0, 2, X)).firstAvailableRow(0))
+    assertEquals(None, List(Disk(0, 0, X), Disk(0, 1, X), Disk(0, 2, X), Disk(0, 3, X)).firstAvailableRow(0))
 
   @Test
   def testPlaceAnyDisk(): Unit =
@@ -30,8 +30,8 @@ class ConnectThreeTest :
     // .... .... .... ....
     // ...X ..X. .X.. X...
     assertEquals(
-      Seq(Seq(Disk(3, 0, X)), Seq(Disk(2, 0, X)), Seq(Disk(1, 0, X)), Seq(Disk(0, 0, X))), 
-      placeAnyDisk(Seq(), X)
+      Seq(Seq(Disk(3, 0, X)), Seq(Disk(2, 0, X)), Seq(Disk(1, 0, X)), Seq(Disk(0, 0, X))),
+      Seq().placeAnyDisk(X)
     )
     // .... .... .... ....
     // .... .... .... ....
@@ -40,7 +40,7 @@ class ConnectThreeTest :
     val board = Seq(Disk(3, 0, O))
     assertEquals(
       Seq(board :+ Disk(3, 1, X), board :+ Disk(2, 0, X), board :+ Disk(1, 0, X), board :+ Disk(0, 0, X)), 
-      placeAnyDisk(board, X)
+      board.placeAnyDisk(X)
     )
 
   @Test
