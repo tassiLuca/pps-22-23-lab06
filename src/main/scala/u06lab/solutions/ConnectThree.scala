@@ -14,21 +14,20 @@ import java.util.OptionalInt
  */
 object ConnectThree extends App:
   val bound = 3
+
+  type Game = Seq[Board]
+  type Board = Seq[Disk]
+  case class Disk(x: Int, y: Int, player: Player)
   enum Player:
     case X, O
     def other: Player = this match
       case X => O
       case _ => X
 
-  case class Disk(x: Int, y: Int, player: Player)
-
   extension(disks: Seq[Disk])
     private def countNears: Int =
       val sortedDisks = disks.sortBy(d => (d.x, d.y))
       sortedDisks.zip(sortedDisks.drop(1)).count((d1, d2) => (d1.x - d2.x).abs <= 1 && (d1.y - d2.y).abs <= 1) + 1
-
-  type Game = Seq[Board]
-  type Board = Seq[Disk]
 
   extension(board: Board)
     private def inWith(criteria: Disk => Boolean): Seq[Disk] = board.filter(criteria(_))
